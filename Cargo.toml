@@ -13,7 +13,6 @@ harness = false
 amcl = { path = "./incubator-milagro-crypto-rust", default-features = false, features = ["bls381"]}
 hex = { version = "0.4.0", optional = true }
 lazy_static = { version = "1.4.0", optional = true }
-rand = { version = "0.8.5", default-features = false }
 zeroize = "1.0.0"
 
 # This cannot be specified as dev-dependencies. Otherwise a cargo bug will always resolve `rand` with `std` feature, which breaks `no_std` builds.
@@ -23,8 +22,6 @@ criterion = { version = "0.3.0", optional = true }
 default = ["std"]
 bench = ["criterion"]
 std = [
-  "rand/std",
-  "rand/std_rng",
   "lazy_static",
   "hex",
 ]

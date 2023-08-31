@@ -7,7 +7,6 @@ extern crate amcl;
 #[cfg(feature = "std")]
 #[macro_use]
 extern crate lazy_static;
-extern crate rand;
 
 mod aggregates;
 mod amcl_utils;

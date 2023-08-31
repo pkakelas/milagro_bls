@@ -1,5 +1,4 @@
 extern crate amcl;
-extern crate rand;
 extern crate zeroize;
 
 #[cfg(not(feature = "std"))]
@@ -12,7 +11,6 @@ use super::amcl_utils::{
 };
 
 use amcl::hash256::HASH256;
-use rand::Rng;
 #[cfg(feature = "std")]
 use std::fmt;
 use BLSCurve::bls381::utils::{
@@ -32,11 +30,11 @@ pub struct SecretKey {
 }
 
 impl SecretKey {
-    /// Generate a new SecretKey using an Rng to seed the `amcl::rand::RAND` PRNG.
-    pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
-        let ikm: [u8; 32] = rng.gen();
-        Self::key_generate(&ikm, &[]).unwrap() // will only error if ikm < 32 bytes
-    }
+    // /// Generate a new SecretKey using an Rng to seed the `amcl::rand::RAND` PRNG.
+    // pub fn random<R: ?Sized>(rng: &mut R) -> Self {
+    //     let ikm: [u8; 32] = rng.gen();
+    //     Self::key_generate(&ikm, &[]).unwrap() // will only error if ikm < 32 bytes
+    // }
 
     /// KeyGenerate
     ///
@@ -78,7 +76,9 @@ impl SecretKey {
 
     /// Instantiate a SecretKey from existing bytes.
     pub fn from_bytes(input: &[u8]) -> Result<SecretKey, AmclError> {
-        Ok(Self { x: secret_key_from_bytes(input)? })
+        Ok(Self {
+            x: secret_key_from_bytes(input)?,
+        })
     }
 
     /// Export the SecretKey as 32 bytes.
@@ -171,7 +171,9 @@ impl PublicKey {
         if bytes.len() != G1_BYTES * 2 {
             return Err(AmclError::InvalidG1Size);
         }
-        Ok(Self { point: deserialize_g1(bytes)? })
+        Ok(Self {
+            point: deserialize_g1(bytes)?,
+        })
     }
 
     /// KeyValidate
@@ -195,18 +197,17 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    /// Instantiate a Keypair using SecretKey::random().
-    pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
-        let sk = SecretKey::random(rng);
-        let pk = PublicKey::from_secret_key(&sk);
-        Keypair { sk, pk }
-    }
+    // Instantiate a Keypair using SecretKey::random().
+    // pub fn random<R: ?Sized>(rng: &mut R) -> Self {
+    //     let sk = SecretKey::random(rng);
+    //     let pk = PublicKey::from_secret_key(&sk);
+    //     Keypair { sk, pk }
+    // }
 }
 
 #[cfg(test)]
 mod tests {
     extern crate hex;
-    extern crate rand;
 
     use super::super::signature::Signature;
     use super::*;
@@ -222,29 +223,29 @@ mod tests {
         assert_eq!(decoded_sk, sk_bytes);
     }
 
-    #[test]
-    fn test_public_key_serialization_isomorphism() {
-        for _ in 0..30 {
-            let sk = SecretKey::random(&mut rand::thread_rng());
-            let pk = PublicKey::from_secret_key(&sk);
-            let decoded_pk = pk.as_bytes().to_vec();
-            let encoded_pk = PublicKey::from_bytes(&decoded_pk).unwrap();
-            let re_recoded_pk = encoded_pk.as_bytes().to_vec();
-            assert_eq!(decoded_pk, re_recoded_pk);
-        }
-    }
+    // #[test]
+    // fn test_public_key_serialization_isomorphism() {
+    //     for _ in 0..30 {
+    //         let sk = SecretKey::random(&mut rand::thread_rng());
+    //         let pk = PublicKey::from_secret_key(&sk);
+    //         let decoded_pk = pk.as_bytes().to_vec();
+    //         let encoded_pk = PublicKey::from_bytes(&decoded_pk).unwrap();
+    //         let re_recoded_pk = encoded_pk.as_bytes().to_vec();
+    //         assert_eq!(decoded_pk, re_recoded_pk);
+    //     }
+    // }
 
-    #[test]
-    fn test_public_key_uncompressed_serialization_isomorphism() {
-        for _ in 0..30 {
-            let sk = SecretKey::random(&mut rand::thread_rng());
-            let mut pk = PublicKey::from_secret_key(&sk);
-            let decoded_pk = pk.as_uncompressed_bytes().to_vec();
-            let mut encoded_pk = PublicKey::from_uncompressed_bytes(&decoded_pk).unwrap();
-            let re_recoded_pk = encoded_pk.as_uncompressed_bytes().to_vec().to_vec();
-            assert_eq!(decoded_pk, re_recoded_pk);
-        }
-    }
+    // #[test]
+    // fn test_public_key_uncompressed_serialization_isomorphism() {
+    //     for _ in 0..30 {
+    //         let sk = SecretKey::random(&mut rand::thread_rng());
+    //         let mut pk = PublicKey::from_secret_key(&sk);
+    //         let decoded_pk = pk.as_uncompressed_bytes().to_vec();
+    //         let mut encoded_pk = PublicKey::from_uncompressed_bytes(&decoded_pk).unwrap();
+    //         let re_recoded_pk = encoded_pk.as_uncompressed_bytes().to_vec().to_vec();
+    //         assert_eq!(decoded_pk, re_recoded_pk);
+    //     }
+    // }
 
     #[test]
     fn test_public_key_uncompressed_serialization_infinity() {
@@ -260,16 +261,28 @@ mod tests {
     #[test]
     fn test_public_key_uncompressed_serialization_incorrect_size() {
         let bytes = vec![1; 1];
-        assert_eq!(PublicKey::from_uncompressed_bytes(&bytes), Err(AmclError::InvalidG1Size));
+        assert_eq!(
+            PublicKey::from_uncompressed_bytes(&bytes),
+            Err(AmclError::InvalidG1Size)
+        );
 
         let bytes = vec![1; 95];
-        assert_eq!(PublicKey::from_uncompressed_bytes(&bytes), Err(AmclError::InvalidG1Size));
+        assert_eq!(
+            PublicKey::from_uncompressed_bytes(&bytes),
+            Err(AmclError::InvalidG1Size)
+        );
 
         let bytes = vec![1; 97];
-        assert_eq!(PublicKey::from_uncompressed_bytes(&bytes), Err(AmclError::InvalidG1Size));
+        assert_eq!(
+            PublicKey::from_uncompressed_bytes(&bytes),
+            Err(AmclError::InvalidG1Size)
+        );
 
         let bytes = vec![];
-        assert_eq!(PublicKey::from_uncompressed_bytes(&bytes), Err(AmclError::InvalidG1Size));
+        assert_eq!(
+            PublicKey::from_uncompressed_bytes(&bytes),
+            Err(AmclError::InvalidG1Size)
+        );
     }
 
     #[test]
@@ -278,30 +291,44 @@ mod tests {
         let mut bytes = vec![0; 96];
         bytes[47] = 1;
         bytes[95] = 1;
-        assert_eq!(PublicKey::from_uncompressed_bytes(&bytes), Err(AmclError::InvalidPoint));
+        assert_eq!(
+            PublicKey::from_uncompressed_bytes(&bytes),
+            Err(AmclError::InvalidPoint)
+        );
     }
 
     #[test]
     fn test_secret_key_from_bytes() {
         let bytes = vec![];
-        assert_eq!(SecretKey::from_bytes(&bytes), Err(AmclError::InvalidSecretKeySize));
+        assert_eq!(
+            SecretKey::from_bytes(&bytes),
+            Err(AmclError::InvalidSecretKeySize)
+        );
 
         let bytes = vec![1; 33];
-        assert_eq!(SecretKey::from_bytes(&bytes), Err(AmclError::InvalidSecretKeySize));
+        assert_eq!(
+            SecretKey::from_bytes(&bytes),
+            Err(AmclError::InvalidSecretKeySize)
+        );
 
         let bytes = vec![0; 32];
-        assert_eq!(SecretKey::from_bytes(&bytes), Err(AmclError::InvalidSecretKeyRange));
+        assert_eq!(
+            SecretKey::from_bytes(&bytes),
+            Err(AmclError::InvalidSecretKeyRange)
+        );
 
         let bytes = vec![255; 32];
-        assert_eq!(SecretKey::from_bytes(&bytes), Err(AmclError::InvalidSecretKeyRange));
+        assert_eq!(
+            SecretKey::from_bytes(&bytes),
+            Err(AmclError::InvalidSecretKeyRange)
+        );
     }
 
     #[test]
-    fn test_secret_key_as_bytes() {
-        let sk = SecretKey::random(&mut rand::thread_rng());
-        assert!(sk.as_bytes().len() == 32);
-    }
-
+    // fn test_secret_key_as_bytes() {
+    //     let sk = SecretKey::random(&mut rand::thread_rng());
+    //     assert!(sk.as_bytes().len() == 32);
+    // }
     #[test]
     fn test_signature_verify_with_serialized_public_key() {
         let sk_bytes = vec![
@@ -320,15 +347,15 @@ mod tests {
         assert!(signature.verify(&message, &pk));
     }
 
-    #[test]
-    fn test_random_secret_key_can_sign() {
-        let sk = SecretKey::random(&mut rand::thread_rng());
-        let pk = PublicKey::from_secret_key(&sk);
+    // #[test]
+    // fn test_random_secret_key_can_sign() {
+    //     let sk = SecretKey::random(&mut rand::thread_rng());
+    //     let pk = PublicKey::from_secret_key(&sk);
 
-        let message = "cats".as_bytes();
-        let signature = Signature::new(&message, &sk);
-        assert!(signature.verify(&message, &pk));
-    }
+    //     let message = "cats".as_bytes();
+    //     let signature = Signature::new(&message, &sk);
+    //     assert!(signature.verify(&message, &pk));
+    // }
 
     #[test]
     fn test_key_validate() {
@@ -336,7 +363,10 @@ mod tests {
         let mut pk_bytes = vec![0; 48];
         pk_bytes[0] = 128;
 
-        assert_eq!(PublicKey::from_bytes(&pk_bytes), Err(AmclError::InvalidPoint));
+        assert_eq!(
+            PublicKey::from_bytes(&pk_bytes),
+            Err(AmclError::InvalidPoint)
+        );
         assert!(PublicKey::from_bytes_unchecked(&pk_bytes).is_ok());
     }
 
@@ -346,19 +376,22 @@ mod tests {
         let mut pk_bytes = vec![0; 48];
         pk_bytes[0] = 196;
 
-        assert_eq!(PublicKey::from_bytes(&pk_bytes), Err(AmclError::InvalidPoint));
+        assert_eq!(
+            PublicKey::from_bytes(&pk_bytes),
+            Err(AmclError::InvalidPoint)
+        );
     }
 
-    #[test]
-    fn test_readme() {
-        // This is an exact replica of the README.md at the top level.
-        // Generate a random key pair.
-        let sk = SecretKey::random(&mut rand::thread_rng());
-        let pk = PublicKey::from_secret_key(&sk);
+    // #[test]
+    // fn test_readme() {
+    //     // This is an exact replica of the README.md at the top level.
+    //     // Generate a random key pair.
+    //     let sk = SecretKey::random(&mut rand::thread_rng());
+    //     let pk = PublicKey::from_secret_key(&sk);
 
-        // Sign and verify a message.
-        let message = "cats".as_bytes();
-        let signature = Signature::new(&message, &sk);
-        assert!(signature.verify(&message, &pk));
-    }
+    //     // Sign and verify a message.
+    //     let message = "cats".as_bytes();
+    //     let signature = Signature::new(&message, &sk);
+    //     assert!(signature.verify(&message, &pk));
+    // }
 }

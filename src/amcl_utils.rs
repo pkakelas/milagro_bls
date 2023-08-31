@@ -1,7 +1,6 @@
 extern crate amcl;
 #[cfg(feature = "std")]
 extern crate hex;
-extern crate rand;
 
 use BLSCurve::bls381::proof_of_possession::DST_G2;
 use BLSCurve::ecp::ECP;
